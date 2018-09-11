@@ -423,12 +423,14 @@ func (c *Connection) setDefaults() {
 		c.Timeout = 60 * time.Second
 	}
 	if c.Transport == nil {
-		c.Transport = &http.Transport{
+		t := &http.Transport{
 			//		TLSClientConfig:    &tls.Config{RootCAs: pool},
 			//		DisableCompression: true,
 			Proxy:               http.ProxyFromEnvironment,
 			MaxIdleConnsPerHost: 2048,
 		}
+		SetExpectContinueTimeout(t, 5*time.Second)
+		c.Transport = t
 	}
 	if c.client == nil {
 		c.client = &http.Client{
@@ -720,6 +722,10 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 		}
 		req.Header.Add("User-Agent", c.UserAgent)
 		req.Header.Add("X-Auth-Token", authToken)
+
+		_, hasCL := p.Headers["Content-Length"]
+		AddExpectAndTransferEncoding(req, hasCL)
+
 		resp, err = c.doTimeoutRequest(timer, req)
 		if err != nil {
 			if (p.Operation == "HEAD" || p.Operation == "GET") && retries > 0 {

@@ -6,7 +6,7 @@ package swift_test
 import (
 	"fmt"
 
-	"github.com/ncw/swift"
+	"github.com/cozy/swift"
 )
 
 func ExampleConnection() {

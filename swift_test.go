@@ -33,8 +33,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ncw/swift"
-	"github.com/ncw/swift/swifttest"
+	"github.com/cozy/swift"
+	"github.com/cozy/swift/swifttest"
 )
 
 var (
@@ -823,6 +823,9 @@ func TestObjectPutWithReauth(t *testing.T) {
 		return
 	}
 
+	c, rollback := makeConnectionWithContainer(t)
+	defer rollback()
+
 	// Simulate that our auth token expired
 	c.AuthToken = "expiredtoken"
 
@@ -851,6 +854,9 @@ func TestObjectPutStringWithReauth(t *testing.T) {
 	if !swift.IS_AT_LEAST_GO_16 {
 		return
 	}
+
+	c, rollback := makeConnectionWithContainer(t)
+	defer rollback()
 
 	// Simulate that our auth token expired
 	c.AuthToken = "expiredtoken"

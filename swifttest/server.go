@@ -33,7 +33,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ncw/swift"
+	"github.com/cozy/swift"
 )
 
 const (

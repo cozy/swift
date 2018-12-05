@@ -223,6 +223,13 @@ func (auth *v3Auth) Token() string {
 	return auth.Headers.Get("X-Subject-Token")
 }
 
+func (auth *v3Auth) ExpiresAt() string {
+	if auth.Auth == nil {
+		return ""
+	}
+	return auth.Auth.Token.Expires_At
+}
+
 func (auth *v3Auth) CdnUrl() string {
 	return ""
 }

@@ -21,6 +21,8 @@ type Authenticator interface {
 	StorageUrl(Internal bool) string
 	// The access token
 	Token() string
+	// The expiration date for the access token
+	ExpiresAt() string
 	// The CDN url if available
 	CdnUrl() string
 }
@@ -116,6 +118,10 @@ func (auth *v1Auth) StorageUrl(Internal bool) string {
 // v1 Authentication - read auth token
 func (auth *v1Auth) Token() string {
 	return auth.Headers.Get("X-Auth-Token")
+}
+
+func (auth *v1Auth) ExpiresAt() string {
+	return ""
 }
 
 // v1 Authentication - read cdn url
@@ -238,6 +244,10 @@ func (auth *v2Auth) StorageUrlForEndpoint(endpointType EndpointType) string {
 // v2 Authentication - read auth token
 func (auth *v2Auth) Token() string {
 	return auth.Auth.Access.Token.Id
+}
+
+func (auth *v2Auth) ExpiresAt() string {
+	return ""
 }
 
 // v2 Authentication - read cdn url

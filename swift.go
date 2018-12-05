@@ -117,11 +117,12 @@ type Connection struct {
 	TrustId        string            // Id of the trust (v3 auth only)
 	Transport      http.RoundTripper `json:"-" xml:"-"` // Optional specialised http.Transport (eg. for Google Appengine)
 	// These are filled in after Authenticate is called as are the defaults for above
-	StorageUrl string
-	AuthToken  string
-	client     *http.Client
-	Auth       Authenticator `json:"-" xml:"-"` // the current authenticator
-	authLock   sync.Mutex    // lock when R/W StorageUrl, AuthToken, Auth
+	StorageUrl    string
+	AuthToken     string
+	client        *http.Client
+	Auth          Authenticator `json:"-" xml:"-"` // the current authenticator
+	AuthExpiresAt *time.Time
+	authLock      sync.Mutex // lock when R/W StorageUrl, AuthToken, Auth
 	// swiftInfo is filled after QueryInfo is called
 	swiftInfo SwiftInfo
 }
@@ -510,9 +511,17 @@ again:
 		c.StorageUrl = c.Auth.StorageUrl(c.Internal)
 	}
 	c.AuthToken = c.Auth.Token()
+	c.AuthExpiresAt = nil
 	if !c.authenticated() {
 		err = newError(0, "Response didn't have storage url and auth token")
 		return
+	}
+	if exp := c.Auth.ExpiresAt(); exp != "" {
+		t, err := time.Parse(time.RFC3339Nano, exp)
+		if err == nil {
+			t = t.Add(-5 * time.Minute)
+			c.AuthExpiresAt = &t
+		}
 	}
 	return
 }
@@ -571,7 +580,13 @@ func (c *Connection) Authenticated() bool {
 //
 // Call with authLock held
 func (c *Connection) authenticated() bool {
-	return c.StorageUrl != "" && c.AuthToken != ""
+	if c.StorageUrl == "" || c.AuthToken == "" {
+		return false
+	}
+	if c.AuthExpiresAt == nil {
+		return true
+	}
+	return c.AuthExpiresAt.After(time.Now())
 }
 
 // SwiftInfo contains the JSON object returned by Swift when the /info

@@ -737,11 +737,11 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 			for k, v := range p.Headers {
 				// Set ContentLength in req if the user passed it in in the headers
 				if k == "Content-Length" {
-					contentLength, err := strconv.ParseInt(v, 10, 64)
+					req.ContentLength, err = strconv.ParseInt(v, 10, 64)
 					if err != nil {
-						return nil, nil, fmt.Errorf("Invalid %q header %q: %v", k, v, err)
+						err = fmt.Errorf("Invalid %q header %q: %v", k, v, err)
+						return
 					}
-					req.ContentLength = contentLength
 				} else {
 					req.Header.Add(k, v)
 				}
@@ -759,7 +759,7 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 				retries--
 				continue
 			}
-			return nil, nil, err
+			return
 		}
 		// Check to see if token has expired
 		if resp.StatusCode == 401 && retries > 0 {
@@ -773,13 +773,12 @@ func (c *Connection) Call(targetUrl string, p RequestOpts) (resp *http.Response,
 
 	headers = readHeaders(resp)
 	if err = c.parseHeaders(resp, p.ErrorMap); err != nil {
-		return nil, headers, err
+		return
 	}
 	if p.NoResponse {
-		var err error
 		drainAndClose(resp.Body, &err)
 		if err != nil {
-			return nil, nil, err
+			return
 		}
 	} else {
 		// Cancel the request on timeout
